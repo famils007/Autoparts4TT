@@ -36,7 +36,7 @@ def process_video(filename, path):
     ffmpeg_cmd = (
         f'ffmpeg -i "{path}/{filename}" '
         f'-filter_complex '
-        f'"[0:v]scale=720:-2,boxblur=10:1[blurred]; '  # Skalieren und unscharf machen für den Hintergrund
+        f'"[0:v]scale=720:1280,boxblur=20:1,crop=720:1280[blurred]; '  # Skalieren, unscharf machen und beschneiden für den Hintergrund
         f'[0:v]scale=720:-2[sharp]; '  # Skalieren des Vordergrunds ohne Unscharfheit
         f'[blurred]scale=720:1280[bg]; '  # Skalieren des unscharfen Hintergrunds auf die volle Größe
         f'[bg][sharp]overlay=(W-w)/2:(H-h)/2" '  # Überlagern des scharfen Vordergrunds über den unscharfen Hintergrund
