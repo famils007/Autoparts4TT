@@ -1,6 +1,8 @@
+import tkinter as tk
+from tkinter import filedialog, messagebox, ttk
 from pytube import YouTube
-import os
 import subprocess
+import os
 import sys
 import random
 
@@ -79,34 +81,6 @@ def get_video_duration(filename, path):
     )
     return float(result.stdout)
 
-
-# Hauptfunktion
-def main():
-    if not is_ffmpeg_installed():
-        install_ffmpeg()
-
-    option = get_user_input()
-    path = r"C:\Users\Fabian Miller\Videos"  # Setzen Sie hier den Pfad, wo das Video gespeichert werden soll
-
-    if option == 1:
-        url = input("Bitte geben Sie die URL des YouTube-Videos ein: ")
-        filename = download_video(url, path)
-        filename = os.path.basename(filename)
-        process_video(filename, path)
-
-    elif option == 2:
-        url1 = input("Bitte geben Sie die URL des ersten YouTube-Videos ein: ")
-        url2 = input("Bitte geben Sie die URL des zweiten YouTube-Videos ein: ")
-        filename1 = download_video(url1, path)
-        filename2 = download_video(url2, path)
-        filename1 = os.path.basename(filename1)
-        filename2 = os.path.basename(filename2)
-        combine_videos(filename1, filename2, path)
-
-    else:
-        print("Ungültige Option ausgewählt.")
-
-# Überarbeitete combine_videos-Funktion
 def combine_videos(first_video, second_video, path):
     print("Die Videos werden kombiniert...")
     combined_filename = "combined_" + first_video
@@ -133,6 +107,104 @@ def combine_videos(first_video, second_video, path):
     )
     os.system(segment_cmd)
     print("Die Videos wurden erfolgreich kombiniert und segmentiert.")
+
+# GUI-Klasse
+class YouTubeDownloaderApp:
+    def __init__(self, master):
+        self.master = master
+        master.title("YouTube Video Downloader")
+        self.create_widgets()
+
+    def create_widgets(self):
+        self.option_var = tk.IntVar()
+        self.option_var.trace("w", self.update_option)
+
+        self.label = tk.Label(self.master, text="YouTube Video Downloader")
+        self.label.pack()
+
+        self.option_frame = tk.Frame(self.master)
+        self.option_frame.pack(pady=10)
+
+        self.option1_rb = tk.Radiobutton(self.option_frame, text="Unscharfer Hintergrund", variable=self.option_var, value=1)
+        self.option1_rb.pack(side=tk.LEFT)
+
+        self.option2_rb = tk.Radiobutton(self.option_frame, text="Zwei Videos übereinander", variable=self.option_var, value=2)
+        self.option2_rb.pack(side=tk.LEFT)
+
+        self.url_frame = tk.Frame(self.master)
+        self.url_frame.pack(pady=10)
+
+        self.url_label1 = tk.Label(self.url_frame, text="Erstes Video URL:")
+        self.url_label1.pack()
+        self.url_entry1 = tk.Entry(self.url_frame)
+        self.url_entry1.pack()
+
+        self.url_label2 = tk.Label(self.url_frame, text="Zweites Video URL:")
+        self.url_entry2 = tk.Entry(self.url_frame)
+        self.url_entry2.insert(0, "https://www.youtube.com/watch?v=NX-i0IWl3yg")
+
+        self.path_label = tk.Label(self.master, text="Speicherpfad:")
+        self.path_label.pack()
+        self.path_entry = tk.Entry(self.master)
+        self.path_entry.insert(0, r"C:\Users\Fabian Miller\Videos")
+
+
+        self.path_entry.pack()
+
+        self.browse_button = tk.Button(self.master, text="Durchsuchen", command=self.browse_folder)
+        self.browse_button.pack()
+
+        self.download_button = tk.Button(self.master, text="Download", command=self.download)
+        self.download_button.pack()
+
+        # Initial update of the option
+        self.update_option()
+
+    def update_option(self, *args):
+        option = self.option_var.get()
+        if option == 2:
+            self.url_label2.pack()
+            self.url_entry2.pack()
+        else:
+            self.url_label2.pack_forget()
+            self.url_entry2.pack_forget()
+    def download(self):
+        option = self.option_var.get()
+        url1 = self.url_entry1.get()
+        url2 = self.url_entry2.get()
+        path = self.path_entry.get()
+
+        if not url1 or not path:
+            messagebox.showwarning("Warnung", "Bitte geben Sie mindestens eine URL und einen Speicherpfad an.")
+            return
+
+        try:
+            filename1 = download_video(url1, path)
+            filename1 = os.path.basename(filename1)
+
+            if option == 1:
+                process_video(filename1, path)
+            elif option == 2 and url2:
+                filename2 = download_video(url2, path)
+                filename2 = os.path.basename(filename2)
+                combine_videos(filename1, filename2, path)
+
+            messagebox.showinfo("Erfolg", "Download und Verarbeitung abgeschlossen.")
+        except Exception as e:
+            messagebox.showerror("Fehler", str(e))
+
+    def browse_folder(self):
+        folder_selected = filedialog.askdirectory()
+        self.path_entry.delete(0, tk.END)
+        self.path_entry.insert(0, folder_selected)
+
+def main():
+    if not is_ffmpeg_installed():
+        install_ffmpeg()
+
+    root = tk.Tk()
+    app = YouTubeDownloaderApp(root)
+    root.mainloop()
 
 if __name__ == "__main__":
     main()
